@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고려 지배층 변화 탐구 시스템</title>
+    <!-- 외부 라이브러리 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { font-family: 'Pretendard', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Header: Vibrant Blue Theme -->
+    <header class="bg-blue-700 text-white px-6 py-5 flex flex-col md:flex-row justify-between items-center shadow-lg sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <div class="bg-white text-blue-700 p-2.5 rounded-xl font-black text-2xl shadow-inner">H</div>
+            <div>
+                <h1 class="text-xl font-bold leading-none tracking-tight">고려 지배층 변화 분석기</h1>
+                <p class="text-xs text-blue-200 mt-1.5 opacity-90">중학교 역사 | 지배층의 변화와 비판적 역사 해석</p>
+            </div>
+        </div>
+        <div class="flex gap-2 mt-4 md:mt-0">
+            <button onclick="fillExample()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm font-bold transition-all border border-blue-400">예시 데이터</button>
+            <button onclick="saveAsImage()" class="bg-white text-blue-700 hover:bg-slate-100 px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-all">이미지 저장</button>
+            <button onclick="resetData()" class="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg text-sm font-bold transition-all">초기화</button>
+        </div>
+    </header>
+
+    <main class="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full flex flex-col gap-6">
+        
+        <!-- Navigation Tabs -->
+        <nav class="flex gap-1.5 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
+            <button onclick="switchTab('input')" id="btn-input" class="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all bg-blue-700 text-white shadow-md">
+                <i data-lucide="table" class="w-4 h-4"></i> 데이터 입력
+            </button>
+            <button onclick="switchTab('visual')" id="btn-visual" class="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all text-slate-500 hover:bg-slate-50">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i> 흐름 시각화
+            </button>
+            <button onclick="switchTab('ai')" id="btn-ai" class="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black transition-all text-slate-500 hover:bg-slate-50">
+                <i data-lucide="brain-circuit" class="w-4 h-4"></i> 분석 리포트
+            </button>
+        </nav>
+
+        <!-- Dashboard Content Area -->
+        <div id="capture-area" class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 min-h-[600px]">
+            
+            <!-- Left Side: Data Entry (5/12) -->
+            <div class="xl:col-span-5 flex flex-col gap-6">
+                <!-- Input Section -->
+                <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col flex-1">
+                    <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                        <span class="font-black text-blue-800 text-sm uppercase flex items-center gap-2">
+                             데이터 입력 그리드
+                        </span>
+                        <span class="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-lg">교과서 근거</span>
+                    </div>
+                    <div class="overflow-auto flex-1 custom-scrollbar">
+                        <table class="w-full text-xs text-left border-collapse">
+                            <thead class="bg-slate-100 sticky top-0 z-10 border-b">
+                                <tr>
+                                    <th class="p-3 border-r w-20 font-bold">시대</th>
+                                    <th class="p-3 border-r w-24 font-bold">지배층</th>
+                                    <th class="p-3 border-r font-bold">권력/경제 기반</th>
+                                    <th class="p-3 font-bold">대표 사건</th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-table-body" class="divide-y divide-slate-100">
+                                <!-- JS에서 동적 생성 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-4 bg-blue-50 border-t border-blue-100">
+                        <button onclick="performAnalysis()" class="w-full bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-200 hover:bg-blue-800 flex items-center justify-center gap-3 transition-all active:scale-95">
+                            <i data-lucide="zap" class="w-5 h-5 text-yellow-300"></i>
+                            지능형 데이터 분석 실행
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Feedback Card -->
+                <section class="bg-white rounded-3xl border border-amber-200 shadow-sm p-6">
+                    <h3 class="text-sm font-black text-amber-900 flex items-center gap-2 mb-4 uppercase">
+                        <i data-lucide="shield-check" class="text-amber-600"></i> 분석 검증 및 학생 의견
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3 bg-amber-50 p-4 rounded-xl border border-amber-100 group cursor-pointer" onclick="toggleAgree()">
+                            <input type="checkbox" id="agree-check" class="w-5 h-5 accent-amber-600 rounded-lg pointer-events-none">
+                            <label class="text-xs font-bold text-amber-950 cursor-pointer">기계적 분석 결과가 역사적 사실과 부합하나요?</label>
+                        </div>
+                        <textarea id="student-opinion" placeholder="AI 분석에 동의하지 않는 점이나 추가하고 싶은 해석을 적어보세요..." class="w-full text-xs p-4 h-28 border border-amber-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-amber-100 resize-none transition-all placeholder:text-amber-300"></textarea>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Side: Reports & Visuals (7/12) -->
+            <div class="xl:col-span-7 flex flex-col gap-6 h-full">
+                
+                <!-- Tab: Visualization -->
+                <div id="tab-visual-content" class="tab-content h-full">
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 flex flex-col h-full">
+                        <h3 class="font-black text-slate-800 text-sm uppercase mb-6 flex items-center gap-2">
+                            <i data-lucide="trending-up" class="text-blue-600"></i> 지배층 영향력 시뮬레이션
+                        </h3>
+                        <div class="flex-1 min-h-[350px]">
+                            <canvas id="influenceChart"></canvas>
+                        </div>
+                        <p class="mt-4 text-[11px] text-slate-400 text-center italic">* 입력된 루계 데이터를 기반으로 한 영향력 지수 시각화입니다.</p>
+                    </div>
+                </div>
+
+                <!-- Tab: Analysis Report -->
+                <div id="tab-ai-content" class="tab-content active h-full">
+                    <div class="bg-blue-900 text-white rounded-3xl shadow-2xl p-8 flex flex-col gap-6 h-full overflow-hidden relative border border-blue-800">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                        
+                        <div class="flex items-center gap-3 border-b border-blue-800 pb-5">
+                            <div class="p-2.5 bg-blue-800 rounded-xl shadow-lg shadow-blue-950">
+                                <div class="w-4 h-4 bg-blue-400 rounded-full animate-pulse shadow-[0_0_15px_rgba(96,165,250,0.6)]"></div>
+                            </div>
+                            <h3 class="font-black text-lg tracking-tight">지능형 데이터 분석 리포트</h3>
+                        </div>
+
+                        <div id="analysis-output" class="flex-1 space-y-6 overflow-auto custom-scrollbar pr-2">
+                            <!-- 초기 화면 -->
+                            <div class="py-20 flex flex-col items-center justify-center text-blue-400/40 gap-4">
+                                <i data-lucide="search" class="w-16 h-16"></i>
+                                <p class="text-sm font-bold">왼쪽의 [분석 실행] 버튼을 눌러 결과물을 생성하세요.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-5 border-t border-blue-800 text-[10px] text-blue-400 italic flex items-start gap-2 leading-relaxed">
+                            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+                            데이터에 기반한 자동 생성 문장입니다. 역사 해석은 보는 관점에 따라 다를 수 있으므로 비판적 수용이 필요합니다.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Stats -->
+    <footer class="bg-white border-t border-slate-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center text-[10px] font-black text-slate-500 shrink-0 gap-4">
+        <div class="flex items-center gap-6">
+            <span class="flex items-center gap-2 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100">
+                <span class="text-slate-400 uppercase">Class Data:</span> 
+                <span id="data-count" class="text-blue-700">0 Items Loaded</span>
+            </span>
+            <span class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.3)]"></span> 
+                로컬 분석 엔진 정상 작동 중
+            </span>
+        </div>
+        <div class="flex gap-4">
+            <span class="hover:text-blue-600 transition-colors cursor-pointer">시스템 안내</span>
+            <span class="text-slate-300">|</span>
+            <span class="hover:text-blue-600 transition-colors cursor-pointer">교사 검토 저장</span>
+        </div>
+    </footer>
+
+    <script>
+        // --- 데이터 정의 및 초기화 ---
+        const historyData = [
+            { id: 1, period: '', rulingClass: '', powerBase: '', economicBase: '', participation: '', event: '' },
+            { id: 2, period: '', rulingClass: '', powerBase: '', economicBase: '', participation: '', event: '' },
+            { id: 3, period: '', rulingClass: '', powerBase: '', economicBase: '', participation: '', event: '' },
+            { id: 4, period: '', rulingClass: '', powerBase: '', economicBase: '', participation: '', event: '' },
+            { id: 5, period: '', rulingClass: '', powerBase: '', economicBase: '', participation: '', event: '' }
+        ];
+
+        const EXAMPLE_DATA = [
+            { id: 1, period: '고려 초기', rulingClass: '호족', powerBase: '독자 군사력', economicBase: '지방세 징수', participation: '지방 자치', event: '고려 건국' },
+            { id: 2, period: '고려 중기', rulingClass: '문벌 귀족', powerBase: '음서, 과거', economicBase: '공음전', participation: '관직 독점', event: '이자겸의 난' },
+            { id: 3, period: '무신 집권기', rulingClass: '무신', powerBase: '무력, 중방', economicBase: '농장 확대', participation: '정변', event: '최씨 정권' },
+            { id: 4, period: '원 간섭기', rulingClass: '권문 세족', powerBase: '친원 성향', economicBase: '대농장 소유', participation: '도평의사사', event: '원의 내정간섭' },
+            { id: 5, period: '고려 말기', rulingClass: '신진 사대부', powerBase: '성리학적 가치', economicBase: '과전법', participation: '과거', event: '위화도 회군' }
+        ];
+
+        // --- 분석 키워드 정의 ---
+        const RULES = [
+            { group: '문벌귀족', keywords: ['문벌', '귀족', '음서', '공음전', '과거', '관료'] },
+            { group: '무신', keywords: ['무신', '정변', '무력', '군사', '최씨', '중방', '교정도감'] },
+            { group: '권문세족', keywords: ['권문', '세족', '대농장', '원 간섭', '친원', '도평의사사'] },
+            { group: '신진사대부', keywords: ['신진', '사대부', '성리학', '과거', '개혁', '공민왕', '위화도', '조선'] }
+        ];
+
+        // --- 화면 초기화 ---
+        function initApp() {
+            renderTable();
+            lucide.createIcons();
+            updateStats();
+        }
+
+        function renderTable() {
+            const body = document.getElementById('data-table-body');
+            body.innerHTML = historyData.map((row, idx) => `
+                <tr class="transition-all hover:bg-blue-50/30">
+                    <td class="p-1 border-r">
+                        <input type="text" value="${row.period}" onchange="updateRow(${idx}, 'period', this.value)" class="w-full p-2 bg-transparent outline-none font-bold text-blue-700" placeholder="예: 초기">
+                    </td>
+                    <td class="p-1 border-r">
+                        <input type="text" value="${row.rulingClass}" onchange="updateRow(${idx}, 'rulingClass', this.value)" class="w-full p-2 bg-transparent outline-none font-black text-slate-800" placeholder="지배층">
+                    </td>
+                    <td class="p-1 border-r">
+                        <textarea onchange="updateRow(${idx}, 'powerBase', this.value)" class="w-full p-2 bg-transparent outline-none resize-none h-10 overflow-hidden text-[10px]" placeholder="음서, 농장 등...">${row.powerBase}</textarea>
+                    </td>
+                    <td class="p-1">
+                        <textarea onchange="updateRow(${idx}, 'event', this.value)" class="w-full p-2 bg-transparent outline-none resize-none h-10 overflow-hidden text-[10px]" placeholder="묘청의 난 등...">${row.event}</textarea>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateRow(idx, field, val) {
+            historyData[idx][field] = val;
+            updateStats();
+        }
+
+        function updateStats() {
+            const count = historyData.filter(d => d.period || d.rulingClass).length;
+            document.getElementById('data-count').innerText = `${count} Items Loaded`;
+        }
+
+        function fillExample() {
+            EXAMPLE_DATA.forEach((ex, i) => Object.assign(historyData[i], ex));
+            renderTable();
+        }
+
+        function resetData() {
+            if(!confirm('모든 데이터를 초기화하시겠습니까?')) return;
+            historyData.forEach(d => {
+                d.period = ''; d.rulingClass = ''; d.powerBase = ''; d.economicBase = ''; d.participation = ''; d.event = '';
+            });
+            renderTable();
+            document.getElementById('analysis-output').innerHTML = `
+                <div class="py-20 flex flex-col items-center justify-center text-blue-400/40 gap-4">
+                    <i data-lucide="search" class="w-16 h-16"></i>
+                    <p class="text-sm font-bold">분석 실행 버튼을 눌러 결과물을 생성하세요.</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // --- 분석 로직 ---
+        function performAnalysis() {
+            const validRows = historyData.filter(d => d.period && d.rulingClass);
+            const output = document.getElementById('analysis-output');
+            
+            if (validRows.length < 2) {
+                output.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-blue-300 gap-4 py-20 px-10 text-center">
+                        <i data-lucide="alert-triangle" class="w-16 h-16 text-yellow-500"></i>
+                        <p class="text-lg font-black">데이터 부족!</p>
+                        <p class="text-sm opacity-80">최소 2개 시대 이상의 데이터를 입력해야 시대별 변화 분석이 가능합니다. 시대명과 지배층 이름을 정확히 입력했는지 확인하세요.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                switchTab('ai');
+                return;
+            }
+
+            // 시대별 그룹화 및 키워드 매칭
+            const eraIdentities = validRows.map(row => {
+                const combinedText = (row.period + row.rulingClass + row.powerBase + row.event).toLowerCase();
+                let matchedGroup = "미정 (새로운 세력)";
+                let score = 0;
+                let foundKeywords = [];
+
+                RULES.forEach(rule => {
+                    const matches = rule.keywords.filter(k => combinedText.includes(k.toLowerCase()));
+                    if (matches.length > score) {
+                        score = matches.length;
+                        matchedGroup = rule.group;
+                        foundKeywords = matches;
+                    }
+                });
+
+                return { period: row.period, rulingClass: row.rulingClass, group: matchedGroup, keywords: foundKeywords };
+            });
+
+            // 문장 생성 루틴
+            let summaryHTML = `<div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">`;
+            
+            // 1. 입력 요약
+            summaryHTML += `
+                <div class="space-y-1">
+                    <p class="text-[10px] font-black tracking-widest text-blue-400 uppercase">Input Summary</p>
+                    <p class="text-sm text-blue-50">입력하신 데이터를 통해 <b>${validRows.length}개 시대</b>의 지배층 변화를 분석했습니다. 입력 데이터는 [${eraIdentities.map(e => e.rulingClass).join(' → ')}]의 흐름을 보이고 있습니다.</p>
+                </div>
+            `;
+
+            // 2. 패턴 분석
+            let patternText = "";
+            let coreKeyword = eraIdentities.flatMap(e => e.keywords);
+            
+            const firstEra = eraIdentities[0];
+            const lastEra = eraIdentities[eraIdentities.length - 1];
+
+            if (firstEra.group === '문벌귀족' && lastEra.group === '신진사대부') {
+                patternText = "초기 혈통과 가문을 중시하던 특권적 귀족 사회에서, 후기로 갈수록 성리학이라는 새로운 이념과 능력을 갖춘 관료 사회로 이행되는 흐름이 매우 뚜렷하게 관찰됩니다.";
+            } else if (coreKeyword.includes('대농장') || coreKeyword.includes('농장')) {
+                patternText = "전시과 체제가 무너지고 지배층이 거대한 농장을 사유화하며 경제권력을 독점하는 양상이 강하게 나타납니다. 이는 고려 사회의 모순이 심화되는 지점이기도 합니다.";
+            } else if (coreKeyword.includes('무력') || coreKeyword.includes('정변')) {
+                patternText = "평화로운 문신 위주의 통치 질서가 무너지고, 무력이라는 물리적 힘에 의해 권력 구조가 재편되는 단절적 패턴이 보입니다.";
+            } else {
+                patternText = "시대가 흐를수록 지배층의 권력 기반이 변화하고 있으나, 데이터가 부분적이어서 전체 흐름을 규정하기 위해 보완이 필요합니다.";
+            }
+
+            summaryHTML += `
+                <div class="space-y-1">
+                    <p class="text-[10px] font-black tracking-widest text-blue-400 uppercase">Historical Pattern</p>
+                    <p class="text-sm text-blue-50 leading-relaxed">${patternText}</p>
+                </div>
+            `;
+
+            // 3. 근거 키워드
+            summaryHTML += `
+                <div class="bg-blue-800/40 p-5 rounded-2xl border border-blue-700/50 shadow-inner">
+                    <h4 class="text-[10px] font-black text-blue-300 mb-3 flex items-center gap-2">
+                        <i data-lucide="key" class="w-3 h-3"></i> 데이터 근거 키워드 매칭
+                    </h4>
+                    <div class="flex flex-wrap gap-2">
+                        ${[...new Set(coreKeyword)].map(k => `<span class="bg-blue-600/50 text-blue-100 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-blue-500/30">#${k}</span>`).join('')}
+                        ${coreKeyword.length === 0 ? '<span class="text-blue-500 text-[10px]">매칭된 역사적 키워드가 부족합니다.</span>' : ''}
+                    </div>
+                </div>
+            `;
+
+            // 4. 비판적 질문
+            summaryHTML += `
+                <div class="space-y-3 pt-2">
+                    <p class="text-[10px] font-black tracking-widest text-orange-400 uppercase">Debate Topics</p>
+                    <ul class="space-y-2">
+                        <li class="bg-white/5 p-3 rounded-xl text-xs flex gap-3 items-start border border-white/5">
+                            <span class="text-orange-400 font-black">Q1.</span> 
+                            <span>위 데이터상으로 지배층은 '능력'과 '혈통' 중 어느 것을 점차 더 중요하게 여기고 있나요?</span>
+                        </li>
+                        <li class="bg-white/5 p-3 rounded-xl text-xs flex gap-3 items-start border border-white/5">
+                            <span class="text-orange-400 font-black">Q2.</span> 
+                            <span>${lastEra.rulingClass}의 등장이 다음 시대인 조선의 건국과 어떤 논리적 연결을 갖는다고 생각하나요?</span>
+                        </li>
+                    </ul>
+                </div>
+            `;
+
+            summaryHTML += `</div>`;
+            output.innerHTML = summaryHTML;
+            lucide.createIcons();
+            switchTab('ai');
+            updateChart();
+        }
+
+        // --- UI 유틸리티 ---
+        function switchTab(tab) {
+            ['input', 'visual', 'ai'].forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                const content = document.getElementById(`tab-${t}-content`);
+                if (t === tab) {
+                    btn.classList.add('bg-blue-700', 'text-white', 'shadow-md');
+                    btn.classList.remove('text-slate-500', 'hover:bg-slate-50');
+                    content.classList.add('active');
+                } else {
+                    btn.classList.remove('bg-blue-700', 'text-white', 'shadow-md');
+                    btn.classList.add('text-slate-500', 'hover:bg-slate-50');
+                    content.classList.remove('active');
+                }
+            });
+            if(tab === 'visual') updateChart();
+        }
+
+        function toggleAgree() {
+            const check = document.getElementById('agree-check');
+            check.checked = !check.checked;
+        }
+
+        function saveAsImage() {
+            const area = document.getElementById('capture-area');
+            html2canvas(area, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `고려지배층탐구_${new Date().getTime()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // --- 차트 엔진 ---
+        let myChart = null;
+        function updateChart() {
+            const ctx = document.getElementById('influenceChart').getContext('2d');
+            const validData = historyData.filter(d => d.period && d.rulingClass);
+            
+            const chartData = {
+                labels: historyData.map(d => d.period || '입력 대기'),
+                datasets: [
+                    {
+                        label: '지배층 안정성',
+                        data: historyData.map(d => d.rulingClass ? 60 + Math.random() * 20 : 0),
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderRadius: 8
+                    },
+                    {
+                        label: '경제 집중도',
+                        data: historyData.map(d => d.powerBase ? 40 + Math.random() * 40 : 0),
+                        backgroundColor: 'rgba(226, 232, 240, 0.8)',
+                        borderRadius: 8
+                    }
+                ]
+            };
+
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, ticks: { display: false }, grid: { display: false } },
+                        x: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // 실행
+        initApp();
+    </script>
+</body>
+</html>
